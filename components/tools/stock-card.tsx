@@ -29,7 +29,7 @@ export function StockCard({
   } satisfies ChartConfig;
 
   return (
-    <Card className="mx-auto my-6 max-w-xl">
+    <Card className="mx-auto">
       <CardHeader>
         <CardTitle>
           {symbol} – Last {data.length} Months

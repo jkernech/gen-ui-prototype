@@ -127,7 +127,7 @@ function parseIncompleteMarkdown(text: string): string {
             i > 0 && result.substring(i - 1, i + 2) === '```';
           const isTripleEnd = i > 1 && result.substring(i - 2, i + 1) === '```';
 
-          if (!((isTripleStart || isTripleMiddle ) || isTripleEnd)) {
+          if (!(isTripleStart || isTripleMiddle || isTripleEnd)) {
             singleBacktickCount++;
           }
         }

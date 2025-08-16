@@ -8,6 +8,24 @@ import {
 } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Skeleton } from '../ui/skeleton';
+import { ToolUIPart } from 'ai';
+
+export type StockToolInput = {
+  symbol: string;
+  numOfMonths: number;
+};
+
+export type StockToolOutput = {
+  date: string;
+  value: number;
+}[];
+
+export type StockToolUIPart = ToolUIPart<{
+  showStockInformation: {
+    input: StockToolInput;
+    output: StockToolOutput;
+  };
+}>;
 
 export function Stock({
   symbol,
@@ -19,9 +37,9 @@ export function Stock({
   return <StockCard symbol={symbol} data={stockData} />;
 }
 
-export async function StockLoader() {
+export function StockLoader() {
   return (
-    <Card className="mx-auto my-6 max-w-xl animate-pulse border shadow-md">
+    <Card className="mx-auto my-6 animate-pulse border shadow-md w-full">
       <CardHeader>
         <CardTitle>
           <Skeleton className="h-6 w-40 rounded bg-gray-300" />

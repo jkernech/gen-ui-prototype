@@ -8,6 +8,28 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToolUIPart } from 'ai';
+
+export type FlightToolInput = {
+  flightNumber: string;
+};
+
+export type FlightToolOutput = {
+  status: string;
+  source: string;
+  destination: string;
+  departure: string;
+  arrival: string;
+  gate: string;
+  seat: string;
+};
+
+export type FlightToolUIPart = ToolUIPart<{
+  showFlightStatus: {
+    input: FlightToolInput;
+    output: FlightToolOutput;
+  };
+}>;
 
 export function Flight({
   flightNumber,
@@ -25,14 +47,16 @@ export function Flight({
   };
 }) {
   return (
-    <Card className="mx-auto my-6 max-w-md border shadow-md">
+    <Card className="mx-auto my-6 w-1xl border shadow-md">
       <CardHeader>
         <div className="flex items-start justify-between">
           <CardTitle className="font-semibold text-lg">
             {flightData.source} → {flightData.destination}
           </CardTitle>
           <Badge
-            variant={flightData.status === 'On Time' ? 'secondary' : 'destructive'}
+            variant={
+              flightData.status === 'On Time' ? 'secondary' : 'destructive'
+            }
           >
             {flightData.status}
           </Badge>
@@ -65,11 +89,11 @@ export function Flight({
 
       <div className="border-t" />
 
-      <div className="flex items-center justify-between bg-gray-100 px-4 py-2">
-        <Button size="sm" variant="outline">
+      <div className="flex items-center justify-between bg-orange-300 px-4 py-2 gap-2">
+        <Button size="sm" variant="outline" className="cursor-pointer">
           View Boarding Pass
         </Button>
-        <span className="text-gray-500 text-xs">Boarding Opens Soon</span>
+        <span className="text-gray-700 text-xs">Boarding Opens Soon</span>
       </div>
     </Card>
   );
@@ -77,7 +101,7 @@ export function Flight({
 
 export function FlightLoader() {
   return (
-    <Card className="mx-auto my-6 max-w-md animate-pulse border shadow-md">
+    <Card className="mx-auto my-6 animate-pulse border shadow-md w-1xl">
       <CardHeader>
         <div className="flex items-start justify-between">
           <Skeleton className="h-6 w-32 rounded bg-gray-300" />

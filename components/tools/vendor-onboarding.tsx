@@ -23,8 +23,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { wait } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { ToolUIPart } from 'ai';
 
-type VendorCategory = 'software' | 'consulting' | 'hardware' | 'services' | 'other';
+export type VendorOnboardingToolInput = {
+  companyName: string;
+  category: string;
+};
+
+export type VendorOnboardingToolOutput = {
+  companyName: string;
+  category: string;
+};
+
+export type VendorOnboardingToolUIPart = ToolUIPart<{
+  startVendorOnboarding: {
+    input: VendorOnboardingToolInput;
+    output: VendorOnboardingToolOutput;
+  };
+}>;
+
+export type VendorCategory =
+  | 'software'
+  | 'consulting'
+  | 'hardware'
+  | 'services'
+  | 'other';
 
 const companyInfoSchema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
@@ -32,9 +55,14 @@ const companyInfoSchema = z.object({
     .string()
     .trim()
     .optional()
-    .refine((v) => !v || /^https?:\/\//i.test(v), 'Website must start with http or https'),
+    .refine(
+      (v) => !v || /^https?:\/\//i.test(v),
+      'Website must start with http or https'
+    ),
   country: z.string().min(2, 'Country is required'),
-  category: z.enum(['software', 'consulting', 'hardware', 'services', 'other']).optional(),
+  category: z
+    .enum(['software', 'consulting', 'hardware', 'services', 'other'])
+    .optional(),
 });
 
 const complianceSchema = z.object({
@@ -42,14 +70,12 @@ const complianceSchema = z.object({
     .string()
     .regex(/^(\d{2}-?\d{7})$/, 'Enter a valid EIN (##-#######)')
     .transform((v) => (v.includes('-') ? v : `${v.slice(0, 2)}-${v.slice(2)}`)),
-  certificationsAck: z.boolean("You must confirm compliance statements"),
+  certificationsAck: z.boolean('You must confirm compliance statements'),
 });
 
 const bankingSchema = z.object({
   accountNumber: z.string().min(6, 'Account number is required'),
-  routingNumber: z
-    .string()
-    .regex(/^\d{9}$/, 'Routing number must be 9 digits'),
+  routingNumber: z.string().regex(/^\d{9}$/, 'Routing number must be 9 digits'),
   accountType: z.enum(['checking', 'savings']),
 });
 
@@ -79,13 +105,15 @@ function useStepValidation() {
         key: 'company' as const,
         title: 'Company Information',
         description: 'Tell us about the vendor you want to onboard.',
-        validate: (data: Partial<FormState>) => companyInfoSchema.safeParse(data),
+        validate: (data: Partial<FormState>) =>
+          companyInfoSchema.safeParse(data),
       },
       {
         key: 'compliance' as const,
         title: 'Tax & Compliance',
         description: 'Enter U.S. EIN and confirm compliance statements.',
-        validate: (data: Partial<FormState>) => complianceSchema.safeParse(data),
+        validate: (data: Partial<FormState>) =>
+          complianceSchema.safeParse(data),
       },
       {
         key: 'banking' as const,
@@ -103,7 +131,8 @@ function useStepValidation() {
         key: 'review' as const,
         title: 'Review & Submit',
         description: 'Verify all details before creating the vendor profile.',
-        validate: (_: Partial<FormState>) => ({ success: true, data: {} } as const),
+        validate: (_: Partial<FormState>) =>
+          ({ success: true, data: {} }) as const,
       },
     ],
     []
@@ -111,8 +140,10 @@ function useStepValidation() {
 }
 
 export function VendorOnboardingForm({
+  className,
   defaultValues,
 }: {
+  className?: string;
   defaultValues?: Partial<Pick<CompanyInfo, 'companyName' | 'category'>>;
 }) {
   const steps = useStepValidation();
@@ -125,7 +156,8 @@ export function VendorOnboardingForm({
     companyName: defaultValues?.companyName ?? '',
     website: '',
     country: '',
-    category: (defaultValues?.category as VendorCategory | undefined) ?? 'software',
+    category:
+      (defaultValues?.category as VendorCategory | undefined) ?? 'software',
     taxId: '',
     certificationsAck: false as true | false,
     accountNumber: '',
@@ -180,9 +212,17 @@ export function VendorOnboardingForm({
   };
 
   const StepIndicator = ({ className }: { className?: string }) => (
-    <ol className={cn("flex flex-wrap items-center gap-2", className)} aria-label="Onboarding steps">
+    <ol
+      className={cn('flex flex-wrap items-center gap-2', className)}
+      aria-label="Onboarding steps"
+    >
       {steps.map((s, i) => {
-        const state = i < activeStep ? 'complete' : i === activeStep ? 'active' : 'upcoming';
+        const state =
+          i < activeStep
+            ? 'complete'
+            : i === activeStep
+              ? 'active'
+              : 'upcoming';
         return (
           <li key={s.key} className="flex items-center gap-2">
             <span
@@ -197,7 +237,9 @@ export function VendorOnboardingForm({
             >
               {i + 1}
             </span>
-            <span className="text-sm text-muted-foreground hidden sm:inline">{s.title}</span>
+            <span className="hidden text-muted-foreground text-sm sm:inline">
+              {s.title}
+            </span>
           </li>
         );
       })}
@@ -205,14 +247,13 @@ export function VendorOnboardingForm({
   );
 
   return (
-    <Card className="mx-auto my-6 w-full max-w-4xl border shadow-md">
+    <Card className={cn('mx-auto my-6 w-full border shadow-md', className)}>
       <CardHeader>
-        
         <CardTitle className="text-xl">Vendor Onboarding</CardTitle>
         <CardDescription className="text-xs">
           {steps[activeStep].description}
         </CardDescription>
-          <StepIndicator className="my-4" />
+        <StepIndicator className="my-4" />
       </CardHeader>
 
       <CardContent>
@@ -241,77 +282,115 @@ export function VendorOnboardingForm({
         ) : (
           <div className="space-y-6">
             {activeStep === 0 && (
-              <section aria-labelledby="company-info-heading" className="space-y-4">
+              <section
+                aria-labelledby="company-info-heading"
+                className="space-y-4"
+              >
                 <h3 id="company-info-heading" className="sr-only">
                   Company Information
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="companyName" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="companyName"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       Company name
                     </label>
                     <Input
                       id="companyName"
                       name="companyName"
                       value={form.companyName}
-                      onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, companyName: e.target.value }))
+                      }
                       aria-invalid={!!errors.companyName}
-                      aria-describedby={errors.companyName ? 'companyName-error' : undefined}
+                      aria-describedby={
+                        errors.companyName ? 'companyName-error' : undefined
+                      }
                       placeholder="Acme Inc."
                     />
                     {errors.companyName && (
-                      <p id="companyName-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="companyName-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.companyName}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label htmlFor="country" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="country"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       Country
                     </label>
                     <Input
                       id="country"
                       name="country"
                       value={form.country}
-                      onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, country: e.target.value }))
+                      }
                       aria-invalid={!!errors.country}
-                      aria-describedby={errors.country ? 'country-error' : undefined}
+                      aria-describedby={
+                        errors.country ? 'country-error' : undefined
+                      }
                       placeholder="United States"
                     />
                     {errors.country && (
-                      <p id="country-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="country-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.country}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label htmlFor="website" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="website"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       Website
                     </label>
                     <Input
                       id="website"
                       name="website"
                       value={form.website}
-                      onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, website: e.target.value }))
+                      }
                       aria-invalid={!!errors.website}
-                      aria-describedby={errors.website ? 'website-error' : undefined}
+                      aria-describedby={
+                        errors.website ? 'website-error' : undefined
+                      }
                       placeholder="https://acme.com"
                     />
                     {errors.website && (
-                      <p id="website-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="website-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.website}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Category</label>
+                    <label className="mb-1 block font-medium text-sm">
+                      Category
+                    </label>
                     <Select
                       value={form.category}
                       onValueChange={(v) =>
-                        setForm((f) => ({ ...f, category: v as VendorCategory }))
+                        setForm((f) => ({
+                          ...f,
+                          category: v as VendorCategory,
+                        }))
                       }
                     >
                       <SelectTrigger aria-label="Select category">
@@ -331,13 +410,19 @@ export function VendorOnboardingForm({
             )}
 
             {activeStep === 1 && (
-              <section aria-labelledby="compliance-heading" className="space-y-4">
+              <section
+                aria-labelledby="compliance-heading"
+                className="space-y-4"
+              >
                 <h3 id="compliance-heading" className="sr-only">
                   Tax & Compliance
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="taxId" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="taxId"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       EIN (Tax ID)
                     </label>
                     <Input
@@ -346,12 +431,19 @@ export function VendorOnboardingForm({
                       inputMode="numeric"
                       placeholder="12-3456789"
                       value={form.taxId}
-                      onChange={(e) => setForm((f) => ({ ...f, taxId: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, taxId: e.target.value }))
+                      }
                       aria-invalid={!!errors.taxId}
-                      aria-describedby={errors.taxId ? 'taxId-error' : undefined}
+                      aria-describedby={
+                        errors.taxId ? 'taxId-error' : undefined
+                      }
                     />
                     {errors.taxId && (
-                      <p id="taxId-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="taxId-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.taxId}
                       </p>
                     )}
@@ -362,19 +454,28 @@ export function VendorOnboardingForm({
                       type="checkbox"
                       checked={!!form.certificationsAck}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, certificationsAck: e.target.checked as true | false }))
+                        setForm((f) => ({
+                          ...f,
+                          certificationsAck: e.target.checked as true | false,
+                        }))
                       }
                       aria-invalid={!!errors.certificationsAck}
                       aria-describedby={
                         errors.certificationsAck ? 'certAck-error' : undefined
                       }
                     />
-                    <label htmlFor="certAck" className="text-sm">
+                    <label
+                      htmlFor="certAck"
+                      className="text-sm ml-2 cursor-pointer"
+                    >
                       I confirm the vendor meets our compliance requirements.
                     </label>
                   </div>
                   {errors.certificationsAck && (
-                    <p id="certAck-error" className="-mt-3 text-destructive text-xs">
+                    <p
+                      id="certAck-error"
+                      className="-mt-3 text-destructive text-xs"
+                    >
                       {errors.certificationsAck}
                     </p>
                   )}
@@ -389,7 +490,10 @@ export function VendorOnboardingForm({
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div className="sm:col-span-2">
-                    <label htmlFor="accountNumber" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="accountNumber"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       Account number
                     </label>
                     <Input
@@ -397,20 +501,31 @@ export function VendorOnboardingForm({
                       name="accountNumber"
                       inputMode="numeric"
                       value={form.accountNumber}
-                      onChange={(e) => setForm((f) => ({ ...f, accountNumber: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          accountNumber: e.target.value,
+                        }))
+                      }
                       aria-invalid={!!errors.accountNumber}
                       aria-describedby={
                         errors.accountNumber ? 'accountNumber-error' : undefined
                       }
                     />
                     {errors.accountNumber && (
-                      <p id="accountNumber-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="accountNumber-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.accountNumber}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label htmlFor="routingNumber" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="routingNumber"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       Routing number
                     </label>
                     <Input
@@ -418,24 +533,39 @@ export function VendorOnboardingForm({
                       name="routingNumber"
                       inputMode="numeric"
                       value={form.routingNumber}
-                      onChange={(e) => setForm((f) => ({ ...f, routingNumber: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          routingNumber: e.target.value,
+                        }))
+                      }
                       aria-invalid={!!errors.routingNumber}
                       aria-describedby={
                         errors.routingNumber ? 'routingNumber-error' : undefined
                       }
                     />
                     {errors.routingNumber && (
-                      <p id="routingNumber-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="routingNumber-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.routingNumber}
                       </p>
                     )}
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Account type</label>
+                  <label className="mb-1 block font-medium text-sm">
+                    Account type
+                  </label>
                   <Select
                     value={form.accountType}
-                    onValueChange={(v) => setForm((f) => ({ ...f, accountType: v as 'checking' | 'savings' }))}
+                    onValueChange={(v) =>
+                      setForm((f) => ({
+                        ...f,
+                        accountType: v as 'checking' | 'savings',
+                      }))
+                    }
                   >
                     <SelectTrigger aria-label="Select account type">
                       <SelectValue placeholder="Select type" />
@@ -456,25 +586,38 @@ export function VendorOnboardingForm({
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="contactName" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="contactName"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       Primary contact name
                     </label>
                     <Input
                       id="contactName"
                       name="contactName"
                       value={form.contactName}
-                      onChange={(e) => setForm((f) => ({ ...f, contactName: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, contactName: e.target.value }))
+                      }
                       aria-invalid={!!errors.contactName}
-                      aria-describedby={errors.contactName ? 'contactName-error' : undefined}
+                      aria-describedby={
+                        errors.contactName ? 'contactName-error' : undefined
+                      }
                     />
                     {errors.contactName && (
-                      <p id="contactName-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="contactName-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.contactName}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label htmlFor="contactEmail" className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor="contactEmail"
+                      className="mb-1 block font-medium text-sm"
+                    >
                       Primary contact email
                     </label>
                     <Input
@@ -482,7 +625,9 @@ export function VendorOnboardingForm({
                       name="contactEmail"
                       type="email"
                       value={form.contactEmail}
-                      onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, contactEmail: e.target.value }))
+                      }
                       aria-invalid={!!errors.contactEmail}
                       aria-describedby={
                         errors.contactEmail ? 'contactEmail-error' : undefined
@@ -490,40 +635,58 @@ export function VendorOnboardingForm({
                       placeholder="name@company.com"
                     />
                     {errors.contactEmail && (
-                      <p id="contactEmail-error" className="mt-1 text-destructive text-xs">
+                      <p
+                        id="contactEmail-error"
+                        className="mt-1 text-destructive text-xs"
+                      >
                         {errors.contactEmail}
                       </p>
                     )}
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="contactPhone" className="mb-1 block text-sm font-medium">
+                  <label
+                    htmlFor="contactPhone"
+                    className="mb-1 block font-medium text-sm"
+                  >
                     Phone (optional)
                   </label>
                   <Input
                     id="contactPhone"
                     name="contactPhone"
                     value={form.contactPhone ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, contactPhone: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, contactPhone: e.target.value }))
+                    }
                     aria-invalid={!!errors.contactPhone}
-                    aria-describedby={errors.contactPhone ? 'contactPhone-error' : undefined}
+                    aria-describedby={
+                      errors.contactPhone ? 'contactPhone-error' : undefined
+                    }
                     placeholder="+1 (555) 123-4567"
                   />
                   {errors.contactPhone && (
-                    <p id="contactPhone-error" className="mt-1 text-destructive text-xs">
+                    <p
+                      id="contactPhone-error"
+                      className="mt-1 text-destructive text-xs"
+                    >
                       {errors.contactPhone}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label htmlFor="notes" className="mb-1 block text-sm font-medium">
+                  <label
+                    htmlFor="notes"
+                    className="mb-1 block font-medium text-sm"
+                  >
                     Notes
                   </label>
                   <Textarea
                     id="notes"
                     name="notes"
                     value={form.notes ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, notes: e.target.value }))
+                    }
                     placeholder="Anything we should know about this vendor?"
                   />
                 </div>
@@ -559,13 +722,18 @@ export function VendorOnboardingForm({
                   <div>
                     <p className="text-muted-foreground text-xs">Banking</p>
                     <p className="font-medium">
-                      {form.accountType} ••••{form.accountNumber.slice(-4)} / {form.routingNumber}
+                      {form.accountType} ••••{form.accountNumber.slice(-4)} /{' '}
+                      {form.routingNumber}
                     </p>
                   </div>
                   <div className="sm:col-span-2">
-                    <p className="text-muted-foreground text-xs">Primary contact</p>
+                    <p className="text-muted-foreground text-xs">
+                      Primary contact
+                    </p>
                     <p className="font-medium">{form.contactName}</p>
-                    <p className="text-muted-foreground text-sm">{form.contactEmail}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {form.contactEmail}
+                    </p>
                   </div>
                   {form.notes && (
                     <div className="sm:col-span-2">
@@ -581,28 +749,45 @@ export function VendorOnboardingForm({
       </CardContent>
 
       <CardFooter className="justify-between">
-        {!submittedId ? (
+        {submittedId ? (
+          <div className="flex w-full items-center justify-end gap-2">
+            <Button type="button" variant="outline" className="cursor-pointer">
+              Invite to Portal
+            </Button>
+            <Button type="button" className="cursor-pointer">
+              View Profile
+            </Button>
+          </div>
+        ) : (
           <>
-            <Button type="button" variant="outline" onClick={handleBack} disabled={activeStep === 0}>
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={handleBack}
+              disabled={activeStep === 0}
+            >
               Back
             </Button>
             {isLastStep ? (
-              <Button type="button" onClick={onSubmit} disabled={isSubmitting}>
+              <Button
+                type="button"
+                onClick={onSubmit}
+                disabled={isSubmitting}
+                className="cursor-pointer"
+              >
                 {isSubmitting ? 'Submitting…' : 'Create Vendor'}
               </Button>
             ) : (
-              <Button type="button" onClick={handleNext}>
+              <Button
+                type="button"
+                onClick={handleNext}
+                className="cursor-pointer"
+              >
                 Continue
               </Button>
             )}
           </>
-        ) : (
-          <div className="flex w-full items-center justify-end gap-2">
-            <Button type="button" variant="outline">
-              Invite to Portal
-            </Button>
-            <Button type="button">View Profile</Button>
-          </div>
         )}
       </CardFooter>
     </Card>
@@ -611,7 +796,7 @@ export function VendorOnboardingForm({
 
 export function VendorOnboardingLoader() {
   return (
-    <Card className="mx-auto my-6 w-full max-w-4xl animate-pulse border shadow-md">
+    <Card className="mx-auto my-6 w-full max-w-4xl animate-pulse border shadow-md w-full">
       <CardHeader>
         <div className="space-y-2">
           <Skeleton className="h-5 w-40 rounded bg-gray-300" />
@@ -675,5 +860,3 @@ export function VendorOnboardingLoader() {
     </Card>
   );
 }
-
-
